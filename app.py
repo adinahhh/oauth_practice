@@ -35,11 +35,17 @@ twitter = oauth.register(
     client_kwargs = None,
 )
 
-# facebook = oauth.register(
-#     name = 'facebook',
-#     client_id = os.environ[FACEBOOK_CLIENT_ID],
-#     client_secret = os.environ[FACEBOOK_CLIENT_SECRET],
-# )
+facebook = oauth.register(
+    name = 'facebook',
+    client_id = os.environ['FACEBOOK_CLIENT_ID'],
+    client_secret = os.environ['FACEBOOK_CLIENT_SECRET'],
+    access_token_url = 'https://graph.facebook.com/v8.0/oauth/access_token',
+    access_token_params = None,
+    authorize_url = 'https://www.facebook.com/v8.0/dialog/oauth',
+    authorize_params = None,
+    api_base_url = 'https://www.graph.facebook.com/me',
+    client_kwargs = {'scope': 'name email'},
+)
 
 @app.route('/')
 def hello_world():
@@ -65,6 +71,12 @@ def login_twitter():
     redirect_uri = url_for('authorize_twitter', _external=True)
     return twitter.authorize_redirect(redirect_uri)
 
+@app.route('/login-facebook')
+def login_facebook():
+    facebook = oauth.create_client('facebook')
+    redirect_uri = url_for('authorize_facebook', _external=True)
+    return facebook.authorize_redirect(redirect_uri)
+
 
 # route that user is redirected to if authentication is successful
 @app.route('/authorize-google')
@@ -87,8 +99,20 @@ def authorize_twitter():
     token = twitter.authorize_access_token()
     resp = twitter.get('account/verify_credentials.json')
     user_info = resp.json()
+    print(user_info)
     # can do something here with token and profile
     session['screen_name'] = user_info['screen_name']
+    return redirect('/')
+
+@app.route('/authorize-facebook')
+def authorize_facebook():
+    facebook = oauth.create_client('facebook')
+    token = facebook.authorize_access_token()
+    resp = facebook.get('account/verify_credentials.json')
+    user_info = resp.json()
+    print(user_info)
+    # can do something here with token and profile
+    # session['email'] = user_info['email']
     return redirect('/')
 
 @app.route('/logout')
